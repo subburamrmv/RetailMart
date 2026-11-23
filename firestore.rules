@@ -1,0 +1,727 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helpers ---
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidOptStr(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidOptNum(data, key) {
+      return !(key in data) || (data[key] is number);
+    }
+
+    function isValidMemberUids(data, expectedOwnerId) {
+      return data.memberUids is list
+        && data.memberUids.size() >= 1
+        && data.memberUids.size() <= 25
+        && data.memberUids[0] is string
+        && expectedOwnerId in data.memberUids;
+    }
+
+    function businessPath(businessId) {
+      return /databases/$(database)/documents/businesses/$(businessId);
+    }
+
+    function businessExists(businessId) {
+      return exists(businessPath(businessId));
+    }
+
+    function businessData(businessId) {
+      return get(businessPath(businessId)).data;
+    }
+
+    function isBusinessMember(businessId) {
+      return isSignedIn()
+        && businessExists(businessId)
+        && (businessData(businessId).ownerId == request.auth.uid || request.auth.uid in businessData(businessId).memberUids);
+    }
+
+    function memberRole(businessId) {
+      return businessData(businessId).ownerId == request.auth.uid
+        ? 'OWNER'
+        : businessData(businessId).memberRoles[request.auth.uid];
+    }
+
+    function isOwner(businessId) {
+      return isBusinessMember(businessId) && memberRole(businessId) == 'OWNER';
+    }
+
+    function isManagerOrOwner(businessId) {
+      return isBusinessMember(businessId) && (memberRole(businessId) == 'OWNER' || memberRole(businessId) == 'MANAGER');
+    }
+
+    function matchesParentMembership(data, businessId) {
+      return businessExists(businessId)
+        && data.ownerId == businessData(businessId).ownerId
+        && data.memberUids == businessData(businessId).memberUids;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUser(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'preferredLanguage', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'preferredLanguage', 'activeBusinessId', 'createdAt', 'updatedAt'])
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && data.preferredLanguage in ['en', 'ta']
+        && isValidOptStr(data, 'activeBusinessId', 128)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBusiness(data, businessId) {
+      return data.keys().hasAll(['id', 'ownerId', 'memberUids', 'memberRoles', 'name', 'ownerName', 'category', 'country', 'currency', 'language', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'memberUids', 'memberRoles', 'name', 'ownerName', 'category', 'phone', 'email', 'address', 'country', 'currency', 'language', 'dateFormat', 'financialYearStartMonth', 'taxEnabled', 'defaultTaxRate', 'receiptFooter', 'lowStockAlertsEnabled', 'dailySummaryAlertsEnabled', 'createdAt', 'updatedAt'])
+        && data.id == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.memberRoles is map
+        && data.memberRoles[data.ownerId] == 'OWNER'
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.ownerName is string && data.ownerName.size() >= 1 && data.ownerName.size() <= 120
+        && data.category in ['Grocery', 'Clothing', 'Stationery', 'Electronics', 'Hardware', 'General retail', 'Other']
+        && isValidOptStr(data, 'phone', 30)
+        && isValidOptStr(data, 'email', 200)
+        && isValidOptStr(data, 'address', 300)
+        && data.country is string && data.country.size() >= 1 && data.country.size() <= 80
+        && data.currency is string && data.currency.size() >= 1 && data.currency.size() <= 10
+        && data.language in ['en', 'ta']
+        && (!('dateFormat' in data) || data.dateFormat in ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'])
+        && (!('financialYearStartMonth' in data) || (data.financialYearStartMonth is int && data.financialYearStartMonth >= 1 && data.financialYearStartMonth <= 12))
+        && (!('taxEnabled' in data) || data.taxEnabled is bool)
+        && isValidOptNum(data, 'defaultTaxRate')
+        && isValidOptStr(data, 'receiptFooter', 240)
+        && (!('lowStockAlertsEnabled' in data) || data.lowStockAlertsEnabled is bool)
+        && (!('dailySummaryAlertsEnabled' in data) || data.dailySummaryAlertsEnabled is bool)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidProduct(data, businessId, productId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'name', 'sku', 'category', 'unit', 'purchaseCost', 'sellingPrice', 'currentStock', 'minStockLevel', 'taxRate', 'hasVariants', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'name', 'sku', 'barcode', 'category', 'brand', 'description', 'unit', 'purchaseCost', 'sellingPrice', 'currentStock', 'minStockLevel', 'supplierId', 'supplierName', 'taxRate', 'expiryDate', 'imageUrl', 'hasVariants', 'isActive', 'createdAt', 'updatedAt'])
+        && data.id == productId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 160
+        && data.sku is string && data.sku.size() >= 1 && data.sku.size() <= 64
+        && isValidOptStr(data, 'barcode', 64)
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 80
+        && isValidOptStr(data, 'brand', 80)
+        && isValidOptStr(data, 'description', 500)
+        && data.unit in ['pcs', 'kg', 'g', 'L', 'mL', 'pack', 'box', 'm', 'dozen']
+        && data.purchaseCost is number && data.purchaseCost >= 0
+        && data.sellingPrice is number && data.sellingPrice >= 0
+        && data.currentStock is number && data.currentStock >= 0
+        && data.minStockLevel is number && data.minStockLevel >= 0
+        && isValidOptStr(data, 'supplierId', 128)
+        && isValidOptStr(data, 'supplierName', 120)
+        && data.taxRate is number && data.taxRate >= 0 && data.taxRate <= 100
+        && isValidOptStr(data, 'expiryDate', 32)
+        && isValidOptStr(data, 'imageUrl', 500)
+        && data.hasVariants is bool
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidVariant(data, businessId, variantId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'productId', 'variantName', 'sku', 'purchaseCost', 'sellingPrice', 'currentStock', 'minStockLevel', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'productId', 'variantName', 'sku', 'purchaseCost', 'sellingPrice', 'currentStock', 'minStockLevel', 'isActive', 'createdAt', 'updatedAt'])
+        && data.id == variantId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && isValidId(data.productId)
+        && data.variantName is string && data.variantName.size() >= 1 && data.variantName.size() <= 100
+        && data.sku is string && data.sku.size() >= 1 && data.sku.size() <= 64
+        && data.purchaseCost is number && data.purchaseCost >= 0
+        && data.sellingPrice is number && data.sellingPrice >= 0
+        && data.currentStock is number && data.currentStock >= 0
+        && data.minStockLevel is number && data.minStockLevel >= 0
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidInventoryMovement(data, businessId, movementId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'productId', 'productName', 'movementType', 'quantityDelta', 'previousStock', 'newStock', 'reason', 'referenceType', 'referenceId', 'performedBy', 'transactionDate', 'createdAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'productId', 'variantId', 'productName', 'movementType', 'quantityDelta', 'previousStock', 'newStock', 'unitCost', 'reason', 'referenceType', 'referenceId', 'performedBy', 'transactionDate', 'createdAt'])
+        && data.id == movementId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && isValidId(data.productId)
+        && isValidOptStr(data, 'variantId', 128)
+        && data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 160
+        && data.movementType in ['OPENING_STOCK', 'PURCHASE_IN', 'SALE_OUT', 'CUSTOMER_RETURN_IN', 'SALE_CANCEL_REVERSAL', 'DAMAGED_OUT', 'EXPIRED_OUT', 'ADJUSTMENT_IN', 'ADJUSTMENT_OUT', 'RECONCILIATION']
+        && data.quantityDelta is number
+        && data.previousStock is number
+        && data.newStock is number && data.newStock >= 0
+        && isValidOptNum(data, 'unitCost')
+        && data.reason is string && data.reason.size() >= 1 && data.reason.size() <= 240
+        && data.referenceType in ['SALE', 'PURCHASE', 'RETURN', 'ADJUSTMENT', 'PRODUCT_INIT']
+        && data.referenceId is string && data.referenceId.size() >= 1 && data.referenceId.size() <= 128
+        && data.performedBy is string && data.performedBy.size() >= 1 && data.performedBy.size() <= 128
+        && data.transactionDate is string && data.transactionDate.size() >= 8 && data.transactionDate.size() <= 40
+        && data.createdAt is timestamp;
+    }
+
+    function isValidSale(data, businessId, saleId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'receiptNumber', 'transactionDate', 'subtotal', 'discountAmount', 'taxAmount', 'totalAmount', 'totalCost', 'paidAmount', 'creditAmount', 'refundedAmount', 'paymentMethod', 'staffUid', 'status', 'itemCount', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'receiptNumber', 'transactionDate', 'subtotal', 'discountAmount', 'taxAmount', 'totalAmount', 'totalCost', 'paidAmount', 'creditAmount', 'refundedAmount', 'paymentMethod', 'paymentBreakdown', 'customerId', 'customerName', 'staffUid', 'staffName', 'status', 'itemCount', 'notes', 'createdAt', 'updatedAt'])
+        && data.id == saleId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.receiptNumber is string && data.receiptNumber.size() >= 1 && data.receiptNumber.size() <= 40
+        && data.transactionDate is string && data.transactionDate.size() >= 8 && data.transactionDate.size() <= 40
+        && data.subtotal is number && data.subtotal >= 0
+        && data.discountAmount is number && data.discountAmount >= 0
+        && data.taxAmount is number && data.taxAmount >= 0
+        && data.totalAmount is number && data.totalAmount >= 0
+        && data.totalCost is number && data.totalCost >= 0
+        && data.paidAmount is number && data.paidAmount >= 0
+        && data.creditAmount is number && data.creditAmount >= 0
+        && data.refundedAmount is number && data.refundedAmount >= 0
+        && data.paymentMethod in ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'CREDIT', 'SPLIT']
+        && (!('paymentBreakdown' in data) || data.paymentBreakdown is map)
+        && isValidOptStr(data, 'customerId', 128)
+        && isValidOptStr(data, 'customerName', 120)
+        && data.staffUid is string && data.staffUid.size() >= 1 && data.staffUid.size() <= 128
+        && isValidOptStr(data, 'staffName', 120)
+        && data.status in ['COMPLETED', 'PARTIALLY_RETURNED', 'RETURNED', 'CANCELLED']
+        && data.itemCount is int && data.itemCount >= 1
+        && isValidOptStr(data, 'notes', 300)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSaleItem(data, businessId, itemId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'saleId', 'productId', 'productName', 'unit', 'quantity', 'returnedQuantity', 'unitPrice', 'unitCostSnapshot', 'discountAmount', 'taxRate', 'taxAmount', 'lineTotal', 'transactionDate', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'saleId', 'productId', 'variantId', 'productName', 'unit', 'quantity', 'returnedQuantity', 'unitPrice', 'unitCostSnapshot', 'discountAmount', 'taxRate', 'taxAmount', 'lineTotal', 'transactionDate', 'createdAt', 'updatedAt'])
+        && data.id == itemId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && isValidId(data.saleId)
+        && isValidId(data.productId)
+        && isValidOptStr(data, 'variantId', 128)
+        && data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 160
+        && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 20
+        && data.quantity is number && data.quantity > 0
+        && data.returnedQuantity is number && data.returnedQuantity >= 0 && data.returnedQuantity <= data.quantity
+        && data.unitPrice is number && data.unitPrice >= 0
+        && data.unitCostSnapshot is number && data.unitCostSnapshot >= 0
+        && data.discountAmount is number && data.discountAmount >= 0
+        && data.taxRate is number && data.taxRate >= 0
+        && data.taxAmount is number && data.taxAmount >= 0
+        && data.lineTotal is number && data.lineTotal >= 0
+        && data.transactionDate is string && data.transactionDate.size() >= 8 && data.transactionDate.size() <= 40
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPurchase(data, businessId, purchaseId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'supplierName', 'invoiceNumber', 'purchaseDate', 'subtotal', 'taxAmount', 'discountAmount', 'totalAmount', 'amountPaid', 'outstandingAmount', 'paymentStatus', 'status', 'stockReceived', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'supplierId', 'supplierName', 'invoiceNumber', 'purchaseDate', 'subtotal', 'taxAmount', 'discountAmount', 'totalAmount', 'amountPaid', 'outstandingAmount', 'paymentStatus', 'status', 'stockReceived', 'notes', 'createdAt', 'updatedAt'])
+        && data.id == purchaseId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && isValidOptStr(data, 'supplierId', 128)
+        && data.supplierName is string && data.supplierName.size() >= 1 && data.supplierName.size() <= 120
+        && data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 64
+        && data.purchaseDate is string && data.purchaseDate.size() >= 8 && data.purchaseDate.size() <= 40
+        && data.subtotal is number && data.subtotal >= 0
+        && data.taxAmount is number && data.taxAmount >= 0
+        && data.discountAmount is number && data.discountAmount >= 0
+        && data.totalAmount is number && data.totalAmount >= 0
+        && data.amountPaid is number && data.amountPaid >= 0
+        && data.outstandingAmount is number && data.outstandingAmount >= 0
+        && data.paymentStatus in ['UNPAID', 'PARTIAL', 'PAID']
+        && data.status in ['DRAFT', 'ORDERED', 'RECEIVED', 'CANCELLED']
+        && data.stockReceived is bool
+        && isValidOptStr(data, 'notes', 300)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPurchaseItem(data, businessId, itemId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'purchaseId', 'productId', 'productName', 'unit', 'quantity', 'unitCost', 'taxAmount', 'lineTotal', 'createdAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'purchaseId', 'productId', 'variantId', 'productName', 'unit', 'quantity', 'unitCost', 'taxAmount', 'lineTotal', 'createdAt'])
+        && data.id == itemId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && isValidId(data.purchaseId)
+        && isValidId(data.productId)
+        && isValidOptStr(data, 'variantId', 128)
+        && data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 160
+        && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 20
+        && data.quantity is number && data.quantity > 0
+        && data.unitCost is number && data.unitCost >= 0
+        && data.taxAmount is number && data.taxAmount >= 0
+        && data.lineTotal is number && data.lineTotal >= 0
+        && data.createdAt is timestamp;
+    }
+
+    function isValidExpense(data, businessId, expenseId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'category', 'description', 'amount', 'paymentMethod', 'expenseDate', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'category', 'description', 'amount', 'paymentMethod', 'expenseDate', 'referenceNumber', 'notes', 'createdAt', 'updatedAt'])
+        && data.id == expenseId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.category in ['Rent', 'Electricity', 'Employee wages', 'Transportation', 'Packaging', 'Maintenance', 'Internet and telephone', 'Marketing', 'Other expenses']
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 240
+        && data.amount is number && data.amount > 0
+        && data.paymentMethod in ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER']
+        && data.expenseDate is string && data.expenseDate.size() >= 8 && data.expenseDate.size() <= 40
+        && isValidOptStr(data, 'referenceNumber', 80)
+        && isValidOptStr(data, 'notes', 300)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCustomer(data, businessId, customerId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'name', 'totalPurchases', 'outstandingCredit', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'name', 'phone', 'email', 'address', 'totalPurchases', 'outstandingCredit', 'createdAt', 'updatedAt'])
+        && data.id == customerId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && isValidOptStr(data, 'phone', 30)
+        && isValidOptStr(data, 'email', 200)
+        && isValidOptStr(data, 'address', 300)
+        && data.totalPurchases is number && data.totalPurchases >= 0
+        && data.outstandingCredit is number && data.outstandingCredit >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSupplier(data, businessId, supplierId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'name', 'totalPurchases', 'outstandingPayable', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'name', 'contactPerson', 'phone', 'email', 'address', 'totalPurchases', 'outstandingPayable', 'createdAt', 'updatedAt'])
+        && data.id == supplierId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && isValidOptStr(data, 'contactPerson', 120)
+        && isValidOptStr(data, 'phone', 30)
+        && isValidOptStr(data, 'email', 200)
+        && isValidOptStr(data, 'address', 300)
+        && data.totalPurchases is number && data.totalPurchases >= 0
+        && data.outstandingPayable is number && data.outstandingPayable >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPayment(data, businessId, paymentId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'partyType', 'partyId', 'partyName', 'amount', 'paymentMethod', 'paymentDate', 'createdAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'partyType', 'partyId', 'partyName', 'amount', 'paymentMethod', 'paymentDate', 'referenceId', 'notes', 'createdAt'])
+        && data.id == paymentId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.partyType in ['CUSTOMER', 'SUPPLIER']
+        && isValidId(data.partyId)
+        && data.partyName is string && data.partyName.size() >= 1 && data.partyName.size() <= 120
+        && data.amount is number && data.amount > 0
+        && data.paymentMethod in ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER']
+        && data.paymentDate is string && data.paymentDate.size() >= 8 && data.paymentDate.size() <= 40
+        && isValidOptStr(data, 'referenceId', 128)
+        && isValidOptStr(data, 'notes', 240)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidNotification(data, businessId, notificationId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'alertKey', 'title', 'message', 'severity', 'isRead', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'alertKey', 'title', 'message', 'severity', 'isRead', 'createdAt', 'updatedAt'])
+        && data.id == notificationId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.alertKey is string && data.alertKey.size() >= 1 && data.alertKey.size() <= 128
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 300
+        && data.severity in ['info', 'warning', 'error']
+        && data.isRead is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAuditLog(data, businessId, logId) {
+      return data.keys().hasAll(['id', 'businessId', 'ownerId', 'memberUids', 'action', 'entityType', 'entityId', 'summary', 'actorUid', 'actorName', 'createdAt'])
+        && data.keys().hasOnly(['id', 'businessId', 'ownerId', 'memberUids', 'action', 'entityType', 'entityId', 'summary', 'actorUid', 'actorName', 'createdAt'])
+        && data.id == logId
+        && data.businessId == businessId
+        && isValidId(data.ownerId)
+        && isValidMemberUids(data, data.ownerId)
+        && data.action is string && data.action.size() >= 1 && data.action.size() <= 80
+        && data.entityType is string && data.entityType.size() >= 1 && data.entityType.size() <= 60
+        && data.entityId is string && data.entityId.size() >= 1 && data.entityId.size() <= 128
+        && data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 300
+        && data.actorUid == request.auth.uid
+        && data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 120
+        && data.createdAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if isVerified()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUser(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUser(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'preferredLanguage', 'activeBusinessId', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /businesses/{businessId} {
+      allow get: if isSignedIn()
+        && isValidId(businessId)
+        && (existing().ownerId == request.auth.uid || request.auth.uid in existing().memberUids);
+      allow list: if isSignedIn()
+        && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+      allow create: if isVerified()
+        && isValidId(businessId)
+        && isValidBusiness(incoming(), businessId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(businessId)
+        && isValidBusiness(incoming(), businessId)
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'ownerName', 'category', 'phone', 'email', 'address', 'country', 'currency', 'language', 'dateFormat', 'financialYearStartMonth', 'taxEnabled', 'defaultTaxRate', 'receiptFooter', 'lowStockAlertsEnabled', 'dailySummaryAlertsEnabled', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'memberRoles', 'updatedAt'])
+        );
+      allow delete: if false;
+
+      match /products/{productId} {
+        allow get: if isValidId(businessId) && isValidId(productId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(productId)
+          && isValidProduct(incoming(), businessId, productId)
+          && isManagerOrOwner(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(productId)
+          && isValidProduct(incoming(), businessId, productId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            (isManagerOrOwner(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'sku', 'barcode', 'category', 'brand', 'description', 'unit', 'purchaseCost', 'sellingPrice', 'currentStock', 'minStockLevel', 'supplierId', 'supplierName', 'taxRate', 'expiryDate', 'imageUrl', 'hasVariants', 'isActive', 'updatedAt']))
+            || (isBusinessMember(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['currentStock', 'updatedAt']))
+            || (isOwner(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+
+      match /product_variants/{variantId} {
+        allow get: if isValidId(businessId) && isValidId(variantId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(variantId)
+          && isValidVariant(incoming(), businessId, variantId)
+          && isManagerOrOwner(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && exists(/databases/$(database)/documents/businesses/$(businessId)/products/$(incoming().productId))
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(variantId)
+          && isValidVariant(incoming(), businessId, variantId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().productId == existing().productId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            (isManagerOrOwner(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['variantName', 'sku', 'purchaseCost', 'sellingPrice', 'currentStock', 'minStockLevel', 'isActive', 'updatedAt']))
+            || (isBusinessMember(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['currentStock', 'updatedAt']))
+            || (isOwner(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+
+      match /inventory_movements/{movementId} {
+        allow get: if isValidId(businessId) && isValidId(movementId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(movementId)
+          && isValidInventoryMovement(incoming(), businessId, movementId)
+          && isBusinessMember(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().performedBy == request.auth.uid
+          && incoming().createdAt == request.time;
+        allow update, delete: if false;
+      }
+
+      match /sales/{saleId} {
+        allow get: if isValidId(businessId) && isValidId(saleId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(saleId)
+          && isValidSale(incoming(), businessId, saleId)
+          && isBusinessMember(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().staffUid == request.auth.uid
+          && incoming().status == 'COMPLETED'
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(saleId)
+          && isValidSale(incoming(), businessId, saleId)
+          && existing().status != 'CANCELLED'
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().staffUid == existing().staffUid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            (isBusinessMember(businessId) && incoming().status in ['PARTIALLY_RETURNED', 'RETURNED'] && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'refundedAmount', 'creditAmount', 'notes', 'updatedAt']))
+            || (isManagerOrOwner(businessId) && incoming().status == 'CANCELLED' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'refundedAmount', 'creditAmount', 'notes', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+
+      match /sale_items/{itemId} {
+        allow get: if isValidId(businessId) && isValidId(itemId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(itemId)
+          && isValidSaleItem(incoming(), businessId, itemId)
+          && isBusinessMember(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && existsAfter(/databases/$(database)/documents/businesses/$(businessId)/sales/$(incoming().saleId))
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(itemId)
+          && isValidSaleItem(incoming(), businessId, itemId)
+          && isBusinessMember(businessId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().saleId == existing().saleId
+          && incoming().productId == existing().productId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['returnedQuantity', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /purchases/{purchaseId} {
+        allow get: if isValidId(businessId) && isValidId(purchaseId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(purchaseId)
+          && isValidPurchase(incoming(), businessId, purchaseId)
+          && isManagerOrOwner(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(purchaseId)
+          && isValidPurchase(incoming(), businessId, purchaseId)
+          && isManagerOrOwner(businessId)
+          && existing().status != 'CANCELLED'
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            (existing().status in ['DRAFT', 'ORDERED'] && incoming().diff(existing()).affectedKeys().hasOnly(['supplierId', 'supplierName', 'invoiceNumber', 'purchaseDate', 'subtotal', 'taxAmount', 'discountAmount', 'totalAmount', 'amountPaid', 'outstandingAmount', 'paymentStatus', 'status', 'stockReceived', 'notes', 'updatedAt']))
+            || (existing().status == 'RECEIVED' && incoming().stockReceived == true && incoming().diff(existing()).affectedKeys().hasOnly(['amountPaid', 'outstandingAmount', 'paymentStatus', 'notes', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+
+      match /purchase_items/{itemId} {
+        allow get: if isValidId(businessId) && isValidId(itemId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(itemId)
+          && isValidPurchaseItem(incoming(), businessId, itemId)
+          && isManagerOrOwner(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && existsAfter(/databases/$(database)/documents/businesses/$(businessId)/purchases/$(incoming().purchaseId))
+          && incoming().createdAt == request.time;
+        allow update, delete: if false;
+      }
+
+      match /expenses/{expenseId} {
+        allow get: if isValidId(businessId) && isValidId(expenseId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(expenseId)
+          && isValidExpense(incoming(), businessId, expenseId)
+          && isManagerOrOwner(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(expenseId)
+          && isValidExpense(incoming(), businessId, expenseId)
+          && isManagerOrOwner(businessId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['category', 'description', 'amount', 'paymentMethod', 'expenseDate', 'referenceNumber', 'notes', 'updatedAt'])
+            || (isOwner(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'updatedAt']))
+          );
+        allow delete: if isVerified() && isValidId(businessId) && isValidId(expenseId) && isOwner(businessId);
+      }
+
+      match /customers/{customerId} {
+        allow get: if isValidId(businessId) && isValidId(customerId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(customerId)
+          && isValidCustomer(incoming(), businessId, customerId)
+          && isBusinessMember(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(customerId)
+          && isValidCustomer(incoming(), businessId, customerId)
+          && isBusinessMember(businessId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'email', 'address', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['totalPurchases', 'outstandingCredit', 'updatedAt'])
+            || (isOwner(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+
+      match /suppliers/{supplierId} {
+        allow get: if isValidId(businessId) && isValidId(supplierId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(supplierId)
+          && isValidSupplier(incoming(), businessId, supplierId)
+          && isManagerOrOwner(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(supplierId)
+          && isValidSupplier(incoming(), businessId, supplierId)
+          && isManagerOrOwner(businessId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'contactPerson', 'phone', 'email', 'address', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['totalPurchases', 'outstandingPayable', 'updatedAt'])
+            || (isOwner(businessId) && incoming().diff(existing()).affectedKeys().hasOnly(['memberUids', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+
+      match /payments/{paymentId} {
+        allow get: if isValidId(businessId) && isValidId(paymentId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(paymentId)
+          && isValidPayment(incoming(), businessId, paymentId)
+          && isBusinessMember(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time;
+        allow update, delete: if false;
+      }
+
+      match /notifications/{notificationId} {
+        allow get: if isValidId(businessId) && isValidId(notificationId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(notificationId)
+          && isValidNotification(incoming(), businessId, notificationId)
+          && isBusinessMember(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerified()
+          && isValidId(businessId) && isValidId(notificationId)
+          && isValidNotification(incoming(), businessId, notificationId)
+          && isBusinessMember(businessId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().businessId == existing().businessId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['isRead', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /audit_logs/{logId} {
+        allow get: if isValidId(businessId) && isValidId(logId) && isBusinessMember(businessId);
+        allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.uid in resource.data.memberUids);
+        allow create: if isVerified()
+          && isValidId(businessId) && isValidId(logId)
+          && isValidAuditLog(incoming(), businessId, logId)
+          && isBusinessMember(businessId)
+          && matchesParentMembership(incoming(), businessId)
+          && incoming().createdAt == request.time;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

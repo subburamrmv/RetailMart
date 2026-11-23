@@ -1,0 +1,1253 @@
+# MASTER PRODUCT DEVELOPMENT PROMPT
+# PROJECT: RETAILMATE – COMPLETE RETAIL BUSINESS MANAGEMENT PLATFORM
+
+## 1. YOUR ROLE
+
+Act as a senior product architect, full-stack software engineer, UI/UX designer, database architect, financial systems specialist and quality assurance engineer.
+
+Your task is to design and build a complete, professional, production-oriented retail business management application called **RetailMate**.
+
+Do not create a simple demonstration, static dashboard, landing-page-only website or non-functional UI prototype.
+
+Build an actual working application with connected modules, persistent data, real business logic, authentication, inventory management, sales management, purchases, expenses, analytics and reporting.
+
+Think like a team building a commercial SaaS product intended for thousands of small and medium-sized retail businesses.
+
+The application must be exceptionally easy to use, visually sophisticated, reliable, responsive and practical for everyday business operations.
+
+You must prioritise:
+1. Simplicity for non-technical business owners.
+2. Professional and distinctive visual design.
+3. Accurate financial and inventory calculations.
+4. Excellent mobile usability.
+5. Complete integration between modules.
+6. Data security and reliability.
+7. Scalability for multiple businesses and users.
+
+Do not sacrifice functionality for appearance or appearance for functionality.
+
+---
+
+# 2. PRODUCT VISION
+
+RetailMate is an all-in-one digital business management platform for small retail businesses.
+
+Its purpose is to replace scattered notebooks, manual calculations, spreadsheets and disconnected applications with one easy-to-use system.
+
+The application should help business owners:
+
+- Manage products and inventory.
+- Record daily sales.
+- Track purchases and suppliers.
+- Record operating expenses.
+- Monitor cash, UPI and other payment collections.
+- Calculate business performance.
+- Generate daily, weekly and monthly reports.
+- Identify low-stock products.
+- Understand which products are selling well.
+- Make better purchasing decisions.
+- Obtain AI-powered business insights.
+
+The core product promise:
+
+"Your entire business. One intelligent, simple dashboard."
+
+The application should initially support:
+- Grocery stores.
+- Clothing stores.
+- Stationery stores.
+- General retail stores.
+- Hardware stores.
+- Electronics stores.
+
+Build a flexible product and inventory architecture that can support different retail categories without requiring separate applications.
+
+---
+
+# 3. TARGET USERS
+
+The primary users are small shop owners and retail entrepreneurs.
+
+Assume that many users:
+- Have limited technical knowledge.
+- Are accustomed to maintaining handwritten records.
+- May not understand accounting terminology.
+- Use Android smartphones as their primary device.
+- May also use a desktop computer or tablet.
+- Want quick access to sales and inventory.
+- Do not want complicated workflows.
+
+Therefore:
+
+Use simple language, clear labels, large touch targets, helpful explanations and minimal data entry.
+
+Do not assume that users understand terms such as COGS, gross margin, operating profit or inventory valuation.
+
+When technical financial terminology is displayed, provide a short explanation.
+
+---
+
+# 4. PLATFORM AND RESPONSIVENESS
+
+Build a responsive, mobile-first application that works exceptionally well on:
+
+- Android smartphones.
+- iPhones.
+- Tablets.
+- Laptops.
+- Desktop computers.
+
+The application should behave like a polished professional business application.
+
+Do not create a desktop-only dashboard and simply shrink it to mobile dimensions.
+
+Design separate responsive layouts:
+
+MOBILE:
+- Compact top header.
+- Bottom navigation.
+- Large action buttons.
+- Single-column content.
+- Touch-friendly forms.
+- Quick sale functionality.
+- Scrollable product lists.
+- Mobile-friendly charts.
+- No horizontal overflow.
+
+TABLET:
+- Adaptive navigation.
+- Two-column dashboard where appropriate.
+- Efficient product and sales interfaces.
+
+DESKTOP:
+- Elegant sidebar navigation.
+- Wider analytics layouts.
+- Professional data tables.
+- Multi-column dashboards.
+- Keyboard-friendly interactions.
+
+All screens must adapt properly to their available screen size.
+
+---
+
+# 5. DESIGN SYSTEM AND VISUAL IDENTITY
+
+This section is extremely important.
+
+I do NOT want the standard generic AI-generated SaaS dashboard appearance.
+
+Do not use the same repetitive layout, oversized gradient headings, excessive rounded cards, random colourful icons or generic template styling that AI tools frequently generate.
+
+Create a distinctive, professionally art-directed visual identity.
+
+DESIGN DIRECTION:
+
+Reference the quality of modern professional financial and business software, while creating an original design.
+
+The application should feel:
+- Premium.
+- Clean.
+- Trustworthy.
+- Minimal.
+- Intelligent.
+- Professional.
+- Calm.
+- Modern.
+- Easy to navigate.
+
+COLOUR PALETTE:
+
+Use a sophisticated combination:
+
+- Deep midnight navy: #17263C
+- Professional teal: #147D75
+- Soft off-white: #F7F8F6
+- White: #FFFFFF
+- Muted slate: #758195
+- Light border: #E6EAE9
+- Success green: #21865B
+- Warning amber: #D99A31
+- Error red: #C84C4C
+
+Use teal as a controlled accent rather than applying it everywhere.
+
+Avoid:
+- Excessive gradients.
+- Neon colours.
+- Glassmorphism everywhere.
+- Heavy shadows.
+- Unnecessary animations.
+- Excessive rounded cards.
+- Random decorative illustrations.
+- Oversized typography.
+- Generic dashboard templates.
+
+TYPOGRAPHY:
+
+Use a modern professional typeface such as Inter.
+
+Establish clear typographic hierarchy:
+- Page headings.
+- Section headings.
+- Metric values.
+- Form labels.
+- Supporting text.
+- Table text.
+
+SPACING:
+
+Use consistent spacing, alignment and visual hierarchy.
+
+BUTTONS:
+
+Use professional, clearly distinguishable primary, secondary and destructive actions.
+
+ICONS:
+
+Use a consistent professional icon library such as Lucide.
+
+Do not mix different icon styles.
+
+CHARTS:
+
+Use simple, readable and meaningful charts. Avoid decorative charts that communicate no business information.
+
+TABLES:
+
+Create polished tables with:
+- Clear column labels.
+- Proper alignment.
+- Search.
+- Filters.
+- Sorting.
+- Pagination where appropriate.
+- Responsive mobile alternatives.
+
+MICROINTERACTIONS:
+
+Add subtle transitions for:
+- Opening dialogs.
+- Switching navigation.
+- Saving records.
+- Updating inventory.
+- Completing sales.
+- Loading reports.
+
+Use clear success, warning and error notifications.
+
+Create a cohesive design system with reusable components.
+
+---
+
+# 6. APPLICATION NAVIGATION
+
+Create the following main navigation:
+
+1. Overview
+2. Products & Inventory
+3. Sales
+4. Purchases
+5. Expenses
+6. Customers
+7. Suppliers
+8. Reports & Analytics
+9. AI Business Assistant
+10. Settings
+
+On desktop, use a professional collapsible sidebar.
+
+On mobile, use an intuitive bottom navigation for the most important sections and a clearly accessible More menu for secondary sections.
+
+The most important mobile shortcuts should be:
+
+- Home
+- Inventory
+- New Sale
+- Reports
+- More
+
+The New Sale action should be especially easy to access.
+
+---
+
+# 7. USER AUTHENTICATION AND BUSINESS ONBOARDING
+
+Create a complete registration and login experience.
+
+Support:
+- Email registration.
+- Email login.
+- Password recovery.
+- Secure logout.
+- User profile management.
+- Business creation.
+- Business switching for authorised users.
+
+BUSINESS ONBOARDING:
+
+After registration, guide the owner through a short onboarding process.
+
+Collect:
+
+1. Business name.
+2. Owner name.
+3. Business category.
+4. Phone number.
+5. Email address.
+6. Business address.
+7. Country.
+8. Currency.
+9. Preferred language.
+10. Financial year settings.
+
+Provide business categories:
+- Grocery.
+- Clothing.
+- Stationery.
+- Electronics.
+- Hardware.
+- General retail.
+- Other.
+
+For Indian businesses, default the currency to INR (₹), but allow the owner to change the currency.
+
+Allow users to skip optional fields.
+
+After onboarding, open the main dashboard.
+
+Provide a guided first-time setup:
+- Add the first product.
+- Enter opening stock.
+- Record the first purchase.
+- Record the first sale.
+
+Do not force users to complete every setup step before they can explore the application.
+
+---
+
+# 8. DASHBOARD / BUSINESS OVERVIEW
+
+Create an exceptionally well-designed business overview.
+
+The dashboard must answer five questions immediately:
+
+1. How much did I sell today?
+2. How much gross profit did I make?
+3. How much stock do I have?
+4. What products need attention?
+5. How is my business performing compared with previous periods?
+
+DISPLAY:
+
+A. Today's sales.
+
+B. Estimated gross profit.
+
+C. Operating expenses.
+
+D. Estimated operating profit.
+
+E. Number of transactions.
+
+F. Total active products.
+
+G. Low-stock products.
+
+H. Recent transactions.
+
+I. Best-selling products.
+
+J. Sales trends.
+
+K. Pending purchases or supplier payments, where applicable.
+
+Add a date selector:
+- Today.
+- Yesterday.
+- Last 7 days.
+- Last 30 days.
+- This month.
+- Custom date range.
+
+Provide quick actions:
+- New Sale.
+- Add Product.
+- Record Purchase.
+- Add Expense.
+
+Create an activity feed showing recent business activities.
+
+Every dashboard metric must be calculated using actual database records and selected date ranges.
+
+Do not hardcode dashboard numbers.
+
+For a new business with no records, display an attractive empty state with instructions for getting started.
+
+---
+
+# 9. PRODUCT MANAGEMENT
+
+Create a complete product management module.
+
+PRODUCT FIELDS:
+
+- Product ID.
+- Product name.
+- SKU.
+- Barcode.
+- Category.
+- Brand.
+- Description.
+- Unit of measurement.
+- Purchase cost.
+- Selling price.
+- Current stock.
+- Minimum stock level.
+- Supplier.
+- Product image.
+- Tax configuration, where applicable.
+- Expiry date, where relevant.
+- Active/inactive status.
+
+FUNCTIONALITY:
+
+- Add products.
+- Edit products.
+- Delete or archive products.
+- Search products.
+- Filter by category.
+- Sort by name.
+- Sort by stock.
+- Sort by selling price.
+- Import products from CSV.
+- Export product lists.
+- View product history.
+
+PRODUCT VARIATIONS:
+
+Support different variations for businesses that need them.
+
+For example:
+
+A clothing product may have:
+- Small / Medium / Large.
+- Black / Blue / White.
+
+Each variation must maintain independent stock.
+
+For grocery products, support:
+- Kilograms.
+- Grams.
+- Litres.
+- Millilitres.
+- Pieces.
+- Packets.
+- Boxes.
+
+Support decimal quantities where appropriate.
+
+PRODUCT DETAIL PAGE:
+
+Display:
+- Product image.
+- Product information.
+- Available stock.
+- Cost and selling price.
+- Gross margin.
+- Sales history.
+- Purchase history.
+- Inventory movement history.
+
+---
+
+# 10. INVENTORY MANAGEMENT
+
+Build an accurate inventory management system.
+
+The stock should update automatically whenever relevant transactions occur.
+
+STOCK-IN:
+- New purchases.
+- Supplier returns received.
+- Manual approved stock adjustments.
+- Customer returns where items are restocked.
+
+STOCK-OUT:
+- Completed sales.
+- Damaged stock.
+- Expired stock.
+- Approved stock adjustments.
+
+FEATURES:
+
+- Current stock overview.
+- Low-stock alerts.
+- Out-of-stock alerts.
+- Expiry alerts.
+- Stock adjustment.
+- Stock transfer readiness for future multi-location support.
+- Inventory valuation.
+- Inventory movement history.
+
+LOW-STOCK ALERT:
+
+If available stock reaches or falls below the product's minimum stock level, show a clear warning.
+
+Display:
+- Product name.
+- Current quantity.
+- Minimum quantity.
+- Suggested reorder quantity.
+
+The suggested quantity should consider recent sales and supplier lead time when sufficient historical data exists.
+
+Do not invent demand forecasts when there is insufficient data.
+
+IMPORTANT:
+
+Maintain an immutable or properly audited inventory movement ledger.
+
+Never update inventory silently without recording the reason and reference transaction.
+
+Use safe database transactions to prevent two simultaneous sales from causing incorrect stock balances.
+
+Provide stock reconciliation functionality.
+
+---
+
+# 11. SALES MANAGEMENT
+
+Build a fast and professional point-of-sale experience.
+
+The sales screen is one of the most important parts of the application.
+
+The owner should be able to record a sale quickly.
+
+SALE WORKFLOW:
+
+1. Search or scan a product.
+2. Select the product.
+3. Enter quantity.
+4. Add additional products.
+5. Automatically calculate the total.
+6. Apply an authorised discount if needed.
+7. Select payment method.
+8. Confirm sale.
+9. Generate a receipt.
+10. Update inventory automatically.
+
+PAYMENT METHODS:
+
+- Cash.
+- UPI.
+- Card.
+- Bank transfer.
+- Credit / pay later.
+- Split payment.
+
+SALE RECORD:
+
+- Sale ID.
+- Business ID.
+- Date and time.
+- Product details.
+- Quantities.
+- Selling price snapshots.
+- Cost snapshots.
+- Discount.
+- Applicable tax.
+- Total.
+- Payment method.
+- Customer, if applicable.
+- Staff member, if applicable.
+- Transaction status.
+
+SALES FEATURES:
+
+- Daily sales list.
+- Search sales.
+- Filter by date.
+- Filter by payment method.
+- View sale details.
+- Print receipts.
+- Download receipts.
+- Returns.
+- Refunds.
+- Cancellation with audit history.
+
+Do not permanently erase completed financial transactions.
+
+Implement appropriate reversal or refund records.
+
+Make the interface especially efficient on mobile.
+
+---
+
+# 12. PURCHASE MANAGEMENT
+
+Create a purchase management module.
+
+The owner should be able to record goods purchased from suppliers.
+
+PURCHASE FIELDS:
+
+- Purchase ID.
+- Supplier.
+- Invoice number.
+- Purchase date.
+- Products.
+- Quantity.
+- Unit cost.
+- Tax.
+- Discount.
+- Total purchase amount.
+- Amount paid.
+- Outstanding amount.
+- Payment status.
+
+FUNCTIONALITY:
+
+- Record new purchases.
+- Edit draft purchases.
+- View purchase history.
+- Track supplier payments.
+- Track outstanding balances.
+- Record partial payments.
+- Update stock when goods are received.
+- Generate purchase reports.
+
+Only update stock when the goods are actually received, not merely when an order is created.
+
+---
+
+# 13. EXPENSE MANAGEMENT
+
+Create a simple expense tracking module.
+
+EXPENSE CATEGORIES:
+
+- Rent.
+- Electricity.
+- Employee wages.
+- Transportation.
+- Packaging.
+- Maintenance.
+- Internet and telephone.
+- Marketing.
+- Other expenses.
+
+FIELDS:
+
+- Expense ID.
+- Category.
+- Description.
+- Amount.
+- Payment method.
+- Date.
+- Reference number.
+- Attachment or receipt image.
+- Notes.
+
+FEATURES:
+
+- Add expense.
+- Edit expense.
+- View expense history.
+- Filter by category.
+- Filter by date.
+- Monthly expense summary.
+- Expense category breakdown.
+
+Do not count product purchases twice as operating expenses when calculating profit.
+
+---
+
+# 14. CUSTOMER MANAGEMENT
+
+Create an optional customer management module.
+
+FIELDS:
+
+- Customer name.
+- Phone number.
+- Email.
+- Address.
+- Customer ID.
+- Purchase history.
+- Total purchases.
+- Outstanding credit balance, where applicable.
+
+FUNCTIONALITY:
+
+- Add customer.
+- Edit customer.
+- View purchase history.
+- Search customer.
+- Record credit sales.
+- Record customer payments.
+- Track outstanding balances.
+
+Customer information must be optional during ordinary cash sales.
+
+Do not make customer registration mandatory for every transaction.
+
+---
+
+# 15. SUPPLIER MANAGEMENT
+
+Create a supplier directory.
+
+FIELDS:
+
+- Supplier name.
+- Contact person.
+- Phone number.
+- Email.
+- Address.
+- Products supplied.
+- Purchase history.
+- Outstanding payments.
+
+FUNCTIONALITY:
+
+- Add suppliers.
+- Edit supplier details.
+- View purchase history.
+- Track supplier balances.
+- Record supplier payments.
+
+---
+
+# 16. FINANCIAL CALCULATION ENGINE
+
+This section is extremely important.
+
+All financial calculations must be performed through deterministic application logic, not by an AI model.
+
+Implement a centralised financial calculation service.
+
+CORE FORMULAS:
+
+Net sales revenue = Sales excluding applicable taxes, after discounts and returns.
+
+Cost of goods sold = Cost of inventory associated with products actually sold.
+
+Gross profit = Net sales revenue - Cost of goods sold.
+
+Gross margin percentage = Gross profit / Net sales revenue × 100.
+
+Operating profit = Gross profit - Operating expenses.
+
+Closing inventory quantity = Opening inventory + Stock received - Stock sold - Other stock-out movements + Restocked returns.
+
+Inventory valuation = Quantity on hand × applicable inventory unit cost.
+
+IMPORTANT ACCOUNTING REQUIREMENTS:
+
+- Distinguish revenue from cash collected.
+- Distinguish credit sales from paid sales.
+- Distinguish purchases from cost of goods sold.
+- Avoid counting supplier purchases and sold goods twice.
+- Handle returns and discounts correctly.
+- Handle tax separately.
+- Maintain historical product cost snapshots.
+- Support weighted-average inventory costing or another clearly configured valuation method.
+- Show profit as an estimate where data is incomplete.
+
+Do not call gross profit net profit.
+
+Do not call operating profit final net income.
+
+Add explanations beside financial metrics so non-accountants can understand them.
+
+Use decimal-safe financial calculations and currency formatting.
+
+---
+
+# 17. REPORTS AND ANALYTICS
+
+Create a powerful yet simple reporting module.
+
+DAILY REPORT:
+
+- Total sales.
+- Number of transactions.
+- Cash collected.
+- UPI collected.
+- Card collections.
+- Credit sales.
+- Cost of goods sold.
+- Gross profit.
+- Expenses.
+- Estimated operating profit.
+- Top-selling products.
+- Low-stock products.
+
+WEEKLY REPORT:
+
+- Weekly sales.
+- Daily sales comparison.
+- Gross profit trend.
+- Expense trend.
+- Best-selling products.
+- Slow-moving products.
+
+MONTHLY REPORT:
+
+- Total revenue.
+- Gross profit.
+- Operating profit.
+- Total expenses.
+- Purchase value.
+- Inventory valuation.
+- Sales trends.
+- Product performance.
+- Payment method distribution.
+
+CHARTS:
+
+Create meaningful visualisations:
+- Sales trend line chart.
+- Revenue versus cost chart.
+- Expense category breakdown.
+- Best-selling products.
+- Payment method breakdown.
+- Inventory status.
+
+Provide:
+- Date filters.
+- Download PDF.
+- Export CSV.
+- Print reports.
+
+Make sure the reports reflect real transactions and are not populated with placeholder figures.
+
+---
+
+# 18. AI BUSINESS ASSISTANT
+
+Create an AI-powered business assistant using the Gemini API.
+
+This should be a separate, clearly accessible module.
+
+The assistant should answer business questions based on the authenticated business's actual data.
+
+EXAMPLE QUESTIONS:
+
+- How much did I sell today?
+- What was my estimated gross profit this week?
+- Which products sold the most this month?
+- Which products are moving slowly?
+- What items need restocking?
+- Which category generated the highest revenue?
+- Why did sales decrease compared with last week?
+- What were my biggest expenses?
+- How is my business performing?
+- Suggest improvements based on my sales data.
+
+AI RULES:
+
+1. AI must use authorised business data only.
+2. AI must not invent sales figures.
+3. AI must not independently modify stock or financial records.
+4. AI must distinguish actual data from predictions.
+5. AI must communicate uncertainty.
+6. AI must explain recommendations in simple language.
+7. AI must not claim that an estimate is an actual result.
+8. AI must not access other businesses' records.
+
+Use backend-controlled data retrieval and securely call Gemini.
+
+Never expose secret API keys in frontend code.
+
+For financial figures, retrieve exact calculated values from the backend and provide them to the AI as context.
+
+The AI assistant should be conversational, helpful and concise.
+
+---
+
+# 19. SMART BUSINESS ALERTS
+
+Create a notification centre.
+
+Alerts should include:
+
+- Low stock.
+- Out of stock.
+- Products nearing expiry.
+- Unusual sales decline.
+- High expense periods.
+- Pending customer payments.
+- Pending supplier payments.
+- Daily report available.
+
+Avoid overwhelming users with unnecessary notifications.
+
+Allow users to customise alert preferences.
+
+---
+
+# 20. SETTINGS AND BUSINESS CUSTOMISATION
+
+Include:
+
+- Business profile.
+- Business category.
+- Currency.
+- Date format.
+- Language.
+- Tax configuration.
+- Receipt settings.
+- User management.
+- Role permissions.
+- Notification preferences.
+- Data export.
+- Security settings.
+- Account settings.
+
+Provide Indian language readiness, especially English and Tamil.
+
+Ensure that the application can support additional languages later.
+
+---
+
+# 21. DATABASE ARCHITECTURE
+
+Use Firebase with a well-structured Firestore database.
+
+Design collections for:
+
+- businesses
+- users
+- products
+- product_variants
+- inventory_movements
+- sales
+- sale_items
+- purchases
+- purchase_items
+- expenses
+- customers
+- suppliers
+- payments
+- notifications
+- audit_logs
+
+Every business-owned record must include businessId.
+
+Implement strict security rules.
+
+Users must only access data belonging to businesses for which they have appropriate permissions.
+
+Do not trust businessId supplied by the frontend without checking the authenticated user's membership.
+
+Implement appropriate indexes.
+
+Use atomic database operations or transactions for:
+- Completing sales.
+- Updating inventory.
+- Receiving purchases.
+- Processing refunds.
+- Recording payments.
+
+Use server-side timestamps.
+
+Maintain audit logs for important financial and stock operations.
+
+Never store plaintext passwords.
+
+Do not place sensitive credentials in client-side code.
+
+---
+
+# 22. TECHNICAL ARCHITECTURE
+
+Preferred stack:
+
+Frontend:
+- React.
+- TypeScript.
+- Vite.
+- Tailwind CSS.
+- Reusable component architecture.
+
+Backend:
+- Firebase Authentication.
+- Cloud Firestore.
+- Firebase Cloud Functions.
+
+AI:
+- Gemini API through secure backend functions.
+
+Charts:
+- Recharts or another suitable charting library.
+
+Icons:
+- Lucide.
+
+Forms:
+- Validated forms with clear error handling.
+
+The application must have:
+- Clean architecture.
+- Reusable components.
+- Type safety.
+- Centralised business logic.
+- Proper loading states.
+- Proper error states.
+- Empty states.
+- Form validation.
+- Authentication guards.
+- Secure database access.
+
+If the environment requires a different implementation approach, explain the technical reason and choose the closest maintainable alternative.
+
+Do not create unnecessary dependencies.
+
+---
+
+# 23. OFFLINE AND SYNCHRONISATION
+
+Design the application with unreliable internet connections in mind.
+
+Where feasible:
+
+- Cache frequently used product information.
+- Provide clear offline status.
+- Queue eligible sales locally.
+- Synchronise pending transactions when connectivity returns.
+- Prevent duplicate transaction submissions.
+- Handle synchronisation conflicts.
+- Clearly display unsynchronised records.
+
+Never show a pending offline sale as a fully synchronised transaction until the backend confirms it.
+
+If reliable offline transaction processing cannot be completed in the initial implementation, clearly indicate this limitation instead of pretending offline support works.
+
+---
+
+# 24. SECURITY AND RELIABILITY
+
+Implement:
+
+- Authentication.
+- Role-based access.
+- Business-level data isolation.
+- Firestore security rules.
+- Server-side validation.
+- Secure API key handling.
+- Input sanitisation.
+- Audit logs.
+- Transaction integrity.
+- Error handling.
+- Backup and recovery strategy.
+
+Consider at least these user roles:
+
+OWNER:
+Full business access.
+
+MANAGER:
+Operational and reporting access based on permissions.
+
+CASHIER:
+Sales and permitted transaction access only.
+
+Employees must not be able to access sensitive business settings unless authorised.
+
+---
+
+# 25. DEMO DATA AND FIRST-TIME EXPERIENCE
+
+Create a separate demo mode or sample business dataset.
+
+Use realistic example products, sales, purchases and expenses.
+
+However:
+
+- Clearly label sample data.
+- Never mix demo records with actual customer records.
+- Allow the user to clear sample data.
+- Never use demo data to imply actual business performance.
+
+For a newly registered user, provide an attractive empty dashboard with simple setup instructions.
+
+Do not display fake performance metrics.
+
+---
+
+# 26. QUALITY ASSURANCE AND TESTING
+
+Before considering the application complete, test all critical workflows.
+
+TEST 1:
+Create a product with 100 units.
+
+TEST 2:
+Record a purchase of 20 units.
+
+Expected stock: 120 units.
+
+TEST 3:
+Sell 5 units.
+
+Expected stock: 115 units.
+
+TEST 4:
+Record a valid customer return of 2 units and restock them.
+
+Expected stock: 117 units.
+
+TEST 5:
+Cancel a completed sale through an authorised reversal process.
+
+Verify that the stock and financial reports are adjusted exactly once.
+
+TEST 6:
+Verify daily sales totals.
+
+TEST 7:
+Verify gross profit and operating profit.
+
+TEST 8:
+Verify that purchases are not double-counted as operating expenses.
+
+TEST 9:
+Verify that two separate businesses cannot access each other's records.
+
+TEST 10:
+Verify that the application works at:
+- 360px mobile width.
+- 390px mobile width.
+- 768px tablet width.
+- 1024px laptop width.
+- 1440px desktop width.
+
+TEST 11:
+Test slow internet and failed requests.
+
+TEST 12:
+Test duplicate sale submissions.
+
+TEST 13:
+Test different product units and decimal quantities.
+
+TEST 14:
+Test refunds, discounts and partial payments.
+
+Fix identified issues rather than merely reporting them.
+
+---
+
+# 27. DEVELOPMENT EXECUTION INSTRUCTIONS
+
+Do not attempt to create an enormous collection of disconnected screens.
+
+Follow this sequence:
+
+PHASE 1:
+Establish the project architecture, design system, application shell, navigation and responsive layouts.
+
+PHASE 2:
+Implement authentication, business onboarding and Firebase configuration.
+
+PHASE 3:
+Implement product management and inventory.
+
+PHASE 4:
+Implement sales and purchases.
+
+PHASE 5:
+Implement expenses, customers and suppliers.
+
+PHASE 6:
+Implement financial calculations and reports.
+
+PHASE 7:
+Implement the AI business assistant.
+
+PHASE 8:
+Implement security, testing, error handling and final UI refinements.
+
+Each module must be connected to the same database and business logic.
+
+Do not generate fake buttons or decorative controls that do nothing.
+
+Every visible interactive element must have a real implemented action.
+
+Do not leave major functionality as TODO comments.
+
+Do not replace missing backend functionality with hardcoded arrays.
+
+If an external configuration or Firebase credential is required, clearly identify what the owner must configure.
+
+Do not invent successful integrations.
+
+---
+
+# 28. IMPORTANT DESIGN INSTRUCTIONS
+
+I want this product to look like a real commercial application designed by a professional product design team.
+
+Please do not:
+
+- Reuse generic AI-generated dashboard layouts.
+- Put every metric inside an oversized rounded card.
+- Use gradients on every screen.
+- Overuse coloured backgrounds.
+- Make the application look like a student project.
+- Use unnecessary illustrations.
+- Fill screens with too much information.
+- Use tiny text on mobile.
+- Create unnecessary navigation levels.
+- Make common tasks difficult to find.
+- Use fake charts or fabricated statistics.
+
+Instead:
+
+- Establish a strong and recognisable visual identity.
+- Use a clean information hierarchy.
+- Make data tables elegant and readable.
+- Design excellent empty states.
+- Make forms simple.
+- Use professional spacing.
+- Ensure consistency across all modules.
+- Make mobile workflows exceptionally smooth.
+- Use subtle, purposeful animation.
+- Keep the application fast and responsive.
+
+The product should feel trustworthy enough that a real shop owner would confidently use it to manage daily business operations.
+
+---
+
+# 29. FINAL ACCEPTANCE CRITERIA
+
+The application is not complete merely because the dashboard looks attractive.
+
+It should satisfy these requirements:
+
+1. A user can register and create a business.
+2. A user can add and manage products.
+3. A user can record purchases.
+4. Stock updates correctly.
+5. A user can record sales.
+6. Stock decreases automatically after completed sales.
+7. A user can record expenses.
+8. Financial calculations are accurate.
+9. Reports use actual transaction data.
+10. Users can view historical performance.
+11. Business data is isolated and secure.
+12. The interface works on phones, tablets and computers.
+13. The application has a distinctive professional appearance.
+14. Critical workflows handle errors safely.
+15. The AI assistant uses actual authorised business data.
+
+Build a complete, coherent application, not a collection of disconnected features.
+
+If you cannot finish all phases in one generation, implement the first complete working vertical slice, clearly state what is implemented and what remains, and continue in manageable phases without breaking existing functionality.
+
+**FINAL PRODUCT OBJECTIVE:**
+
+RetailMate should become an easy-to-use digital business manager that helps small retail owners understand, organise and improve their businesses without requiring advanced technical or accounting knowledge.
+
+Build it with the quality, discipline and user experience expected from a serious commercial SaaS startup.

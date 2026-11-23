@@ -1,0 +1,8 @@
+{
+  "name": "RetailMate",
+  "description": "All-in-one retail business management platform for inventory, point-of-sale billing, purchases, expenses, and financial analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
